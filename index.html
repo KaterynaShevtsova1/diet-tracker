@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diet Tracker — Kate</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#1a1a1a;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #e8e8e0;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.header h1{font-size:18px;font-weight:600}
+.countdown{font-size:13px;color:#888;background:#f0f9f4;padding:4px 12px;border-radius:99px;border:1px solid #c8e6d4}
+.tabs{display:flex;background:#fff;border-bottom:1px solid #e8e8e0;overflow-x:auto}
+.tab{padding:12px 20px;font-size:14px;cursor:pointer;border:none;background:none;color:#888;border-bottom:3px solid transparent;white-space:nowrap;flex-shrink:0}
+.tab.active{color:#1a1a1a;border-bottom:3px solid #2d9e6b;font-weight:500}
+.page{display:none;padding:16px 20px;max-width:680px;margin:0 auto}
+.page.active{display:block}
+.card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;border:1px solid #e8e8e0}
+.card-title{font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px}
+.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+.metric{background:#f5f5f0;border-radius:12px;padding:12px;text-align:center}
+.metric-val{font-size:24px;font-weight:600;color:#1a1a1a}
+.metric-lbl{font-size:11px;color:#888;margin-top:2px}
+.progress-wrap{background:#f0f0ec;border-radius:99px;height:10px;margin:8px 0 4px;overflow:hidden}
+.progress{height:10px;border-radius:99px;background:#2d9e6b;transition:width 0.4s}
+.progress.warn{background:#f0a020}
+.progress.over{background:#e04040}
+.meal-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0ec}
+.meal-row:last-child{border-bottom:none}
+.meal-check{width:22px;height:22px;accent-color:#2d9e6b;cursor:pointer;flex-shrink:0}
+.meal-name{flex:1;font-size:14px;line-height:1.4}
+.meal-name.done{text-decoration:line-through;color:#bbb}
+.meal-kcal{font-size:13px;color:#888;white-space:nowrap}
+.day-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.nav-btn{background:#f5f5f0;border:1px solid #e8e8e0;border-radius:10px;padding:6px 14px;cursor:pointer;font-size:18px;color:#555}
+.day-info{text-align:center}
+.day-name{font-size:16px;font-weight:600}
+.day-date{font-size:12px;color:#888;margin-top:2px}
+.wine-tag{display:inline-block;font-size:12px;padding:3px 10px;border-radius:99px;background:#fff3e0;color:#b06000;border:1px solid #ffd080;margin-top:4px}
+.no-wine-tag{display:inline-block;font-size:12px;padding:3px 10px;border-radius:99px;background:#f0f0ec;color:#888;margin-top:4px}
+textarea{width:100%;font-size:14px;border:1px solid #e8e8e0;border-radius:10px;padding:10px;background:#f9f9f7;color:#1a1a1a;resize:none;min-height:70px;font-family:inherit}
+textarea:focus{outline:none;border-color:#2d9e6b}
+input[type=number],input[type=text]{width:100%;padding:10px 14px;font-size:15px;border:1px solid #e8e8e0;border-radius:10px;background:#f9f9f7;color:#1a1a1a;font-family:inherit}
+input:focus{outline:none;border-color:#2d9e6b}
+button.primary{background:#2d9e6b;color:#fff;border:none;border-radius:10px;padding:10px 20px;font-size:14px;font-weight:500;cursor:pointer}
+button.primary:hover{background:#238a5b}
+.weight-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.weight-row input{flex:1}
+.w-entry{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0ec;font-size:14px}
+.w-entry:last-child{border-bottom:none}
+.w-date{color:#888;width:80px;font-size:13px}
+.w-val{font-weight:600;min-width:60px}
+.w-diff.pos{color:#e04040}
+.w-diff.neg{color:#2d9e6b}
+.goal-section{margin-top:12px;padding-top:12px;border-top:1px solid #f0f0ec}
+.goal-labels{display:flex;justify-content:space-between;font-size:12px;color:#888;margin-bottom:6px}
+.goal-text{text-align:center;font-size:13px;color:#555;margin-top:6px}
+.chart-wrap{height:160px;position:relative;margin:8px 0}
+canvas{width:100%!important}
+.chat-msgs{display:flex;flex-direction:column;gap:8px;min-height:180px;max-height:350px;overflow-y:auto;margin-bottom:12px;padding:4px}
+.msg{padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.5;max-width:88%}
+.msg.bot{background:#f0f9f4;color:#1a1a1a;align-self:flex-start;border:1px solid #c8e6d4}
+.msg.user{background:#2d9e6b;color:#fff;align-self:flex-end}
+.msg.loading{color:#aaa;font-style:italic;background:#f5f5f0;border:1px solid #e8e8e0}
+.chat-input-row{display:flex;gap:8px}
+.chat-input-row input{flex:1}
+.send-btn{background:#2d9e6b;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:18px;cursor:pointer;flex-shrink:0}
+.quick-btns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.qbtn{font-size:12px;padding:6px 12px;cursor:pointer;border:1px solid #e8e8e0;border-radius:99px;background:#f5f5f0;color:#555}
+.qbtn:hover{background:#e8e8e0}
+.rule-row{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid #f0f0ec;font-size:14px}
+.rule-row:last-child{border-bottom:none}
+.rule-icon{font-size:18px;flex-shrink:0}
+.tags{display:flex;flex-wrap:wrap;gap:8px}
+.tag{padding:6px 14px;border-radius:99px;font-size:13px}
+.tag.green{background:#e8f5ee;color:#1a6b3c}
+.tag.amber{background:#fff3e0;color:#8a5000}
+.tag.blue{background:#e8f0fb;color:#1a3c8a}
+.vacation-box{display:flex;align-items:center;gap:16px;padding:8px 0}
+.vacation-emoji{font-size:40px}
+.vacation-days{font-size:28px;font-weight:700;color:#2d9e6b}
+.vacation-lbl{font-size:13px;color:#888}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#f5f5f0;border-radius:12px;padding:12px;text-align:center}
+.stat-val{font-size:20px;font-weight:600}
+.stat-lbl{font-size:11px;color:#888;margin-top:2px}
+.good{color:#2d9e6b}
+.bad{color:#e04040}
+.neutral{color:#888}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🥗 Diet Tracker</h1>
+  <div class="countdown" id="countdown">...</div>
+</div>
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('today',this)">Сьогодні</button>
+  <button class="tab" onclick="switchTab('log',this)">Журнал</button>
+  <button class="tab" onclick="switchTab('weight',this)">Вага</button>
+  <button class="tab" onclick="switchTab('chat',this)">Дієтолог</button>
+  <button class="tab" onclick="switchTab('plan',this)">План</button>
+</div>
+<div id="page-today" class="page active">
+  <div class="day-nav">
+    <button class="nav-btn" onclick="changeDay(-1)">←</button>
+    <div class="day-info">
+      <div class="day-name" id="day-name">Понеділок</div>
+      <div class="day-date" id="day-date"></div>
+      <div id="wine-tag"></div>
+    </div>
+    <button class="nav-btn" onclick="changeDay(1)">→</button>
+  </div>
+  <div class="metrics">
+    <div class="metric"><div class="metric-val" id="m-eaten">0</div><div class="metric-lbl">з'їдено ккал</div></div>
+    <div class="metric"><div class="metric-val" id="m-left">1450</div><div class="metric-lbl">залишилось</div></div>
+  </div>
+  <div class="metrics" style="margin-top:-4px">
+    <div class="metric"><div class="metric-val" id="m-pct">0%</div><div class="metric-lbl">виконано</div></div>
+    <div class="metric"><div class="metric-val" id="m-protein" style="font-size:18px">0г</div><div class="metric-lbl">білок (ціль 90г)</div></div>
+  </div>
+  <div class="progress-wrap"><div class="progress" id="cal-bar" style="width:0%"></div></div>
+  <div style="display:flex;justify-content:space-between;font-size:11px;color:#888;margin-bottom:12px"><span>0</span><span>ціль 1450 ккал</span></div>
+  <div class="card">
+    <div class="card-title">Прийоми їжі</div>
+    <div id="meal-list"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Нотатка дня</div>
+    <textarea id="day-note" placeholder="Як себе почуваєш? Що з'їла зайвого? Настрій?"></textarea>
+  </div>
+</div>
+<div id="page-log" class="page">
+  <div class="card">
+    <div class="card-title">Статистика за тиждень</div>
+    <div class="stats-grid" id="week-stats"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Калорії по днях</div>
+    <div class="chart-wrap"><canvas id="cal-chart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Журнал</div>
+    <div id="log-list"></div>
+  </div>
+</div>
+<div id="page-weight" class="page">
+  <div class="card">
+    <div class="card-title">Внести вагу сьогодні</div>
+    <div class="weight-row">
+      <input type="number" id="w-input" step="0.1" min="40" max="120" placeholder="57.5 кг" />
+      <button class="primary" onclick="saveWeight()">Зберегти</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Графік ваги</div>
+    <div class="chart-wrap"><canvas id="w-chart"></canvas></div>
+    <div class="goal-section">
+      <div class="goal-labels"><span>Старт: 58 кг</span><span>Ціль: 52 кг</span></div>
+      <div class="progress-wrap"><div class="progress" id="goal-bar" style="width:0%"></div></div>
+      <div class="goal-text" id="goal-text">Внеси першу вагу щоб побачити прогрес</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Записи</div>
+    <div id="weight-list"></div>
+  </div>
+</div>
+<div id="page-chat" class="page">
+  <div class="card">
+    <div class="card-title">Швидкі питання</div>
+    <div class="quick-btns">
+      <button class="qbtn" onclick="quickAsk('Що я можу з\'їсти на обід зараз — легке і смачне?')">Що на обід?</button>
+      <button class="qbtn" onclick="quickAsk('Я зірвалась і з\'їла зайве. Що робити далі?')">Зірвалась</button>
+      <button class="qbtn" onclick="quickAsk('Дай мені порцію мотивації — я йду у відпустку 4 липня!')">Мотивація</button>
+      <button class="qbtn" onclick="quickAsk('Можна випити вино сьогодні чи краще утриматись?')">Чи можна вино?</button>
+      <button class="qbtn" onclick="quickAsk('Запропонуй мені легку вечерю до 400 ккал')">Легка вечеря</button>
+      <button class="qbtn" onclick="quickAsk('Як прискорити метаболізм після 40 років?')">Метаболізм</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="chat-msgs" id="chat-msgs">
+      <div class="msg bot">Привіт, Кейт! 👋 Я твій персональний дієтолог. Знаю твій план, твої вподобання і твою ціль — 52 кг до 4 липня. Питай будь-що!</div>
+    </div>
+    <div class="chat-input-row">
+      <input type="text" id="chat-in" placeholder="Напиши питання..." onkeydown="if(event.key==='Enter')sendChat()" />
+      <button class="send-btn" onclick="sendChat()">↑</button>
+    </div>
+  </div>
+</div>
+<div id="page-plan" class="page">
+  <div class="card">
+    <div class="card-title">Головні правила</div>
+    <div class="rule-row"><span class="rule-icon">🎯</span><span>Ціль: <strong>1400–1500 ккал</strong> на день</span></div>
+    <div class="rule-row"><span class="rule-icon">🥗</span><span><strong>Не пропускай обід</strong> — це найважливіше правило</span></div>
+    <div class="rule-row"><span class="rule-icon">🍷</span><span>Вино: <strong>3 рази на тиждень</strong> (пн, ср, сб), 150 мл</span></div>
+    <div class="rule-row"><span class="rule-icon">🚶</span><span><strong>8000 кроків</strong> щодня мінімум</span></div>
+    <div class="rule-row"><span class="rule-icon">⚖️</span><span>Зважуйся <strong>раз на тиждень</strong>, вранці, натще</span></div>
+    <div class="rule-row"><span class="rule-icon">💪</span><span>Білок <strong>мінімум 90г</strong> на день</span></div>
+    <div class="rule-row"><span class="rule-icon">❤️</span><span>Зриви бувають — один круасан не руйнує місяць</span></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Дозволені смаколики</div>
+    <div class="tags">
+      <span class="tag green">шоколад 25г/день</span>
+      <span class="tag amber">вино 3×/тиждень</span>
+      <span class="tag amber">круасан 1×/тиждень</span>
+      <span class="tag green">рафаелло 2шт/тиждень</span>
+      <span class="tag blue">пармезан 20г/день</span>
+      <span class="tag amber">пиво — рідко, замість вина</span>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">До відпустки</div>
+    <div class="vacation-box">
+      <div class="vacation-emoji">✈️</div>
+      <div>
+        <div><span class="vacation-days" id="v-days">—</span> <span style="font-size:16px;color:#888">днів</span></div>
+        <div class="vacation-lbl">4 липня 2026 — море</div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Очікуваний прогрес</div>
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <div class="w-entry"><span class="w-date">Старт</span><span class="w-val">58.0 кг</span><span></span></div>
+      <div class="w-entry"><span class="w-date">Тиждень 1</span><span class="w-val">57.1 кг</span><span class="w-diff neg">−0.9 кг</span></div>
+      <div class="w-entry"><span class="w-date">Тиждень 2</span><span class="w-val">56.4 кг</span><span class="w-diff neg">−0.7 кг</span></div>
+      <div class="w-entry"><span class="w-date">Тиждень 3</span><span class="w-val">55.6 кг</span><span class="w-diff neg">−0.8 кг</span></div>
+      <div class="w-entry"><span class="w-date">4 липня</span><span class="w-val" style="color:#2d9e6b">55.0 кг</span><span class="w-diff neg">−3 кг</span></div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const GOAL_KCAL=1450,GOAL_PROTEIN=90,START_WEIGHT=58,TARGET_WEIGHT=52;
+const VACATION_DATE=new Date('2026-07-04');
+const WINE_DAYS=[1,3,6];
+const DAY_NAMES=['Неділя','Понеділок','Вівторок','Середа','Четвер','П\'ятниця','Субота'];
+const MENU={1:[{n:'Омлет (1 яйце) + молоко 100мл + м\'який сир 20г',k:200,p:15},{n:'Хлібець Finn Crisp',k:35,p:1},{n:'Кава з молоком 100мл',k:50,p:2},{n:'Фрукти 100г',k:60,p:1},{n:'Куряча грудка 100г + салат 150г + олія 1 ч.л.',k:220,p:25},{n:'Шоколад 25г',k:135,p:2},{n:'Курка або м\'ясо 150г',k:220,p:30},{n:'Макарони відварні 40г',k:140,p:4},{n:'Пармезан 20г',k:80,p:7},{n:'Вино сухе 150мл 🍷',k:120,p:0,wine:true}],2:[{n:'Омлет (1 яйце) + молоко 100мл + м\'який сир 20г',k:200,p:15},{n:'Хлібець Finn Crisp',k:35,p:1},{n:'Кава з молоком 100мл',k:50,p:2},{n:'Фрукти 100г',k:60,p:1},{n:'Тунець 100г + яйце варене + салат + олія',k:250,p:28},{n:'Шоколад 25г',k:135,p:2},{n:'М\'ясо або риба 150г',k:220,p:30},{n:'Броколі або цукіні тушковані 200г',k:60,p:4},{n:'Пармезан 20г',k:80,p:7},{n:'Чай + 2 рафаелло 🍬',k:120,p:1}],3:[{n:'Омлет (1 яйце) + молоко 100мл + м\'який сир 20г',k:200,p:15},{n:'Хлібець Finn Crisp',k:35,p:1},{n:'Кава з молоком 100мл',k:50,p:2},{n:'Фрукти 100г',k:60,p:1},{n:'Куряча грудка 100г + грецький салат',k:230,p:26},{n:'Шоколад 25г',k:135,p:2},{n:'Лосось або курка 150г',k:220,p:30},{n:'Макарони відварні 40г',k:140,p:4},{n:'Пармезан 20г',k:80,p:7},{n:'Вино сухе 150мл 🍷',k:120,p:0,wine:true}],4:[{n:'Омлет (1 яйце) + молоко 100мл + м\'який сир 20г',k:200,p:15},{n:'Хлібець Finn Crisp',k:35,p:1},{n:'Кава з молоком 100мл',k:50,p:2},{n:'Фрукти 100г',k:60,p:1},{n:'Омлет 2 яйця з овочами + м\'який сир 30г',k:240,p:20},{n:'Шоколад 25г',k:135,p:2},{n:'М\'ясо запечене 150г',k:220,p:30},{n:'Овочі на грилі 200г',k:80,p:4},{n:'Пармезан 20г',k:80,p:7}],5:[{n:'Омлет (1 яйце) + молоко 100мл + м\'який сир 20г',k:200,p:15},{n:'Хлібець Finn Crisp',k:35,p:1},{n:'Кава з молоком 100мл',k:50,p:2},{n:'Фрукти 100г',k:60,p:1},{n:'Куряча грудка 100г + авокадо ¼ + салат',k:250,p:25},{n:'Шоколад 25г',k:135,p:2},{n:'Риба запечена 150г',k:200,p:32},{n:'Цукіні тушковані 200г',k:60,p:3},{n:'Пармезан 20г',k:80,p:7}],6:[{n:'Круасан маленький 🥐 (твій день!)',k:220,p:5},{n:'Кава з молоком',k:50,p:2},{n:'М\'який сир 30г',k:60,p:5},{n:'Салат з куркою 100г',k:200,p:24},{n:'Шоколад 25г',k:135,p:2},{n:'М\'ясо 150г',k:220,p:30},{n:'Макарони відварні 40г',k:140,p:4},{n:'Пармезан 20г',k:80,p:7},{n:'Вино сухе 150мл 🍷',k:120,p:0,wine:true}],0:[{n:'Омлет (1 яйце) + молоко 100мл + м\'який сир 20г',k:200,p:15},{n:'Хлібець Finn Crisp',k:35,p:1},{n:'Кава з молоком 100мл',k:50,p:2},{n:'Фрукти 100г',k:60,p:1},{n:'Яйця 2шт + овочі + сир 30г',k:240,p:18},{n:'Шоколад 25г',k:135,p:2},{n:'Курка 150г',k:220,p:30},{n:'Броколі + морква тушковані 200г',k:70,p:5},{n:'Пармезан 20г',k:80,p:7}]};
+let state=JSON.parse(localStorage.getItem('diet_kate_v2')||'{"weights":[],"notes":{},"meals":{},"logs":{}}');
+let dayOffset=0,calChart=null,wChart=null;
+function save(){localStorage.setItem('diet_kate_v2',JSON.stringify(state));}
+function getDate(o){const d=new Date();d.setDate(d.getDate()+o);return d;}
+function getKey(o){return getDate(o).toISOString().split('T')[0];}
+function getDow(o){return getDate(o).getDay();}
+function renderToday(){
+  const dow=getDow(dayOffset),key=getKey(dayOffset);
+  if(!state.meals[key])state.meals[key]=JSON.parse(JSON.stringify(MENU[dow]||MENU[1])).map(m=>({...m,done:false}));
+  const meals=state.meals[key],list=document.getElementById('meal-list');
+  list.innerHTML='';
+  meals.forEach((m,i)=>{const row=document.createElement('div');row.className='meal-row';row.innerHTML=`<input type="checkbox" class="meal-check" ${m.done?'checked':''} onchange="toggleMeal(${i})"><span class="meal-name ${m.done?'done':''}">${m.n}</span><span class="meal-kcal">${m.k} ккал</span>`;list.appendChild(row);});
+  const eaten=meals.filter(m=>m.done).reduce((s,m)=>s+m.k,0);
+  const protein=meals.filter(m=>m.done).reduce((s,m)=>s+(m.p||0),0);
+  const left=Math.max(0,GOAL_KCAL-eaten),pct=Math.round(eaten/GOAL_KCAL*100);
+  document.getElementById('m-eaten').textContent=eaten;
+  document.getElementById('m-left').textContent=left;
+  document.getElementById('m-pct').textContent=pct+'%';
+  document.getElementById('m-protein').textContent=protein+'г';
+  const bar=document.getElementById('cal-bar');
+  bar.style.width=Math.min(pct,100)+'%';
+  bar.className='progress'+(pct>105?' over':pct>90?' warn':'');
+  const d=getDate(dayOffset);
+  document.getElementById('day-name').textContent=DAY_NAMES[dow];
+  document.getElementById('day-date').textContent=d.toLocaleDateString('uk-UA',{day:'numeric',month:'long'});
+  const wt=document.getElementById('wine-tag');
+  if(WINE_DAYS.includes(dow))wt.innerHTML='<span class="wine-tag">🍷 день вина</span>';
+  else wt.innerHTML='<span class="no-wine-tag">без вина</span>';
+  document.getElementById('day-note').value=state.notes[key]||'';
+}
+function toggleMeal(i){
+  const key=getKey(dayOffset);
+  state.meals[key][i].done=!state.meals[key][i].done;
+  const eaten=state.meals[key].filter(m=>m.done).reduce((s,m)=>s+m.k,0);
+  if(!state.logs[key])state.logs[key]={kcal:0};
+  state.logs[key].kcal=eaten;
+  save();renderToday();
+}
+function changeDay(d){saveNote();dayOffset+=d;renderToday();}
+function saveNote(){state.notes[getKey(dayOffset)]=document.getElementById('day-note').value;save();}
+document.getElementById('day-note').addEventListener('blur',saveNote);
+function saveWeight(){
+  const v=parseFloat(document.getElementById('w-input').value);
+  if(isNaN(v)||v<30||v>200)return;
+  const key=getKey(0),ex=state.weights.findIndex(w=>w.date===key);
+  if(ex>=0)state.weights[ex].kg=v;else state.weights.push({date:key,kg:v});
+  state.weights.sort((a,b)=>a.date.localeCompare(b.date));
+  save();renderWeight();document.getElementById('w-input').value='';
+}
+function renderWeight(){
+  const list=document.getElementById('weight-list');
+  if(!state.weights.length){list.innerHTML='<div style="color:#aaa;font-size:14px;padding:8px">Ще немає записів</div>';return;}
+  list.innerHTML=state.weights.slice(-10).reverse().map((w,i,arr)=>{
+    const prev=arr[i+1];let diff='';
+    if(prev){const d=(w.kg-prev.kg).toFixed(1);diff=`<span class="w-diff ${d<=0?'neg':'pos'}">${d>0?'+':''}${d} кг</span>`;}
+    const d=new Date(w.date);
+    return `<div class="w-entry"><span class="w-date">${d.toLocaleDateString('uk-UA',{day:'numeric',month:'short'})}</span><span class="w-val">${w.kg} кг</span>${diff}</div>`;
+  }).join('');
+  const latest=state.weights[state.weights.length-1].kg;
+  const prog=Math.max(0,Math.min(100,(START_WEIGHT-latest)/(START_WEIGHT-TARGET_WEIGHT)*100));
+  document.getElementById('goal-bar').style.width=prog.toFixed(0)+'%';
+  document.getElementById('goal-text').textContent=`Схудла ${(START_WEIGHT-latest).toFixed(1)} кг з ${START_WEIGHT-TARGET_WEIGHT} кг цілі (${prog.toFixed(0)}%)`;
+  renderWChart();
+}
+function renderLog(){
+  const keys=Object.keys(state.logs).sort().slice(-7);
+  const kcals=keys.map(k=>state.logs[k]?.kcal||0);
+  const avgKcal=kcals.length?Math.round(kcals.reduce((a,b)=>a+b,0)/kcals.length):0;
+  const daysOnTarget=kcals.filter(k=>k>0&&k<=GOAL_KCAL+100).length;
+  document.getElementById('week-stats').innerHTML=`<div class="stat"><div class="stat-val ${avgKcal<=GOAL_KCAL?'good':'bad'}">${avgKcal}</div><div class="stat-lbl">середні ккал</div></div><div class="stat"><div class="stat-val good">${daysOnTarget}</div><div class="stat-lbl">днів у нормі</div></div><div class="stat"><div class="stat-val neutral">${keys.length}</div><div class="stat-lbl">днів відмічено</div></div>`;
+  const logList=document.getElementById('log-list');
+  if(!keys.length){logList.innerHTML='<div style="color:#aaa;font-size:14px;padding:8px">Ще немає даних</div>';return;}
+  logList.innerHTML=keys.reverse().map(k=>{
+    const d=new Date(k),kcal=state.logs[k]?.kcal||0,note=state.notes[k]||'',ok=kcal>0&&kcal<=GOAL_KCAL+100;
+    return `<div style="padding:10px 0;border-bottom:1px solid #f0f0ec"><div style="display:flex;justify-content:space-between;font-size:14px"><span>${d.toLocaleDateString('uk-UA',{weekday:'short',day:'numeric',month:'short'})}</span><span style="font-weight:600;color:${ok?'#2d9e6b':'#e04040'}">${kcal||'—'} ккал</span></div>${note?`<div style="font-size:12px;color:#888;margin-top:4px">${note}</div>`:''}</div>`;
+  }).join('');
+  renderCalChart(keys.reverse(),kcals.reverse());
+}
+function renderCalChart(keys,kcals){
+  const ctx=document.getElementById('cal-chart').getContext('2d');
+  if(calChart)calChart.destroy();
+  calChart=new Chart(ctx,{type:'bar',data:{labels:keys.map(k=>{const d=new Date(k);return d.toLocaleDateString('uk-UA',{day:'numeric',month:'short'});}),datasets:[{label:'ккал',data:kcals,backgroundColor:kcals.map(k=>k<=GOAL_KCAL+100?'#2d9e6b':'#e04040'),borderRadius:6},{label:'ціль',data:keys.map(()=>GOAL_KCAL),type:'line',borderColor:'#f0a020',borderDash:[5,5],pointRadius:0,borderWidth:2,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:2500}}}});
+}
+function renderWChart(){
+  if(!state.weights.length)return;
+  const ctx=document.getElementById('w-chart').getContext('2d');
+  if(wChart)wChart.destroy();
+  const data=state.weights.slice(-8);
+  wChart=new Chart(ctx,{type:'line',data:{labels:data.map(w=>{const d=new Date(w.date);return d.toLocaleDateString('uk-UA',{day:'numeric',month:'short'});}),datasets:[{label:'вага',data:data.map(w=>w.kg),borderColor:'#2d9e6b',backgroundColor:'rgba(45,158,107,0.1)',borderWidth:2,pointRadius:5,fill:true,tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:TARGET_WEIGHT-1,max:START_WEIGHT+1}}}});
+}
+async function sendChat(){
+  const inp=document.getElementById('chat-in'),msg=inp.value.trim();
+  if(!msg)return;inp.value='';addMsg(msg,'user');
+  const loading=addMsg('Думаю...','bot loading');
+  const system=`Ти персональний дієтолог Кейт (Катерина). Її профіль:\n- 44 роки, 162 см, 58 кг → ціль 52 кг до 4 липня 2026\n- Сидяча робота, ходьба 5-8 тис кроків, є орбітрек вдома\n- Ціль: 1400-1500 ккал/день, білок мінімум 90г\n- Вино: 3 рази на тиждень (пн, ср, сб), 150 мл сухого\n- Любить: шоколад 25г/день, пармезан, рафаелло, круасани, пиво, тараня\n- Проблема: пропускає обід → зриви ввечері\n- Відповідай коротко, тепло, конкретно, по-українськи. Підтримуй і мотивуй.`;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system,messages:[{role:'user',content:msg}]})});
+    const data=await res.json();
+    loading.classList.remove('loading');
+    loading.textContent=data.content?.[0]?.text||'Спробуй ще раз.';
+  }catch(e){loading.classList.remove('loading');loading.textContent='Помилка з\'єднання.';}
+}
+function quickAsk(q){document.getElementById('chat-in').value=q;document.querySelectorAll('.tab').forEach((t,i)=>{if(i===3)t.classList.add('active');else t.classList.remove('active');});document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('page-chat').classList.add('active');sendChat();}
+function addMsg(text,type){const wrap=document.getElementById('chat-msgs'),el=document.createElement('div');el.className='msg '+type;el.textContent=text;wrap.appendChild(el);wrap.scrollTop=wrap.scrollHeight;return el;}
+function switchTab(name,btn){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));btn.classList.add('active');document.getElementById('page-'+name).classList.add('active');if(name==='weight')renderWeight();if(name==='log')renderLog();}
+function updateCountdown(){const now=new Date(),diff=Math.ceil((VACATION_DATE-now)/(1000*60*60*24));document.getElementById('countdown').textContent=diff>0?`✈️ ${diff} днів до моря`:'🌊 Відпустка!';document.getElementById('v-days').textContent=diff>0?diff:'🌊';}
+renderToday();updateCountdown();
+</script>
+</body>
+</html>

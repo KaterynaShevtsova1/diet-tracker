@@ -27,6 +27,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .progress.over{background:#e04040}
 .meal-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0ec}
 .meal-row:last-child{border-bottom:none}
+  .habit-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0ec}
 .meal-check{width:22px;height:22px;accent-color:#2d9e6b;cursor:pointer;flex-shrink:0}
 .meal-name{flex:1;font-size:14px;line-height:1.4}
 .meal-name.done{text-decoration:line-through;color:#bbb}
@@ -279,7 +280,7 @@ function renderToday(){
   const wt=document.getElementById('wine-tag');
   if(WINE_DAYS.includes(dow))wt.innerHTML='<span class="wine-tag">🍷 день вина</span>';
   else wt.innerHTML='<span class="no-wine-tag">без вина</span>';
-  document.getElementById('day-note').value=state.notes[key]||'';
+  document.getElementById('day-note').value=state.notes[key]||''; loadHabits();
 }
 function toggleMeal(i){
   const key=getKey(dayOffset);
@@ -291,6 +292,8 @@ function toggleMeal(i){
 }
 function changeDay(d){saveNote();dayOffset+=d;renderToday();}
 function saveNote(){state.notes[getKey(dayOffset)]=document.getElementById('day-note').value;save();}
+  function saveHabit(name,val){const key=getKey(dayOffset);if(!state.habits)state.habits={};if(!state.habits[key])state.habits[key]={};state.habits[key][name]=val;save();}
+function loadHabits(){const key=getKey(dayOffset);const h=state.habits?.[key]||{};document.getElementById('h-steps').checked=h.steps||false;document.getElementById('h-breath').checked=h.breath||false;}
 document.getElementById('day-note').addEventListener('blur',saveNote);
 function saveWeight(){
   const v=parseFloat(document.getElementById('w-input').value);

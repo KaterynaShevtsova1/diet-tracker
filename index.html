@@ -322,7 +322,7 @@ function renderLog(){
   const keys=Object.keys(state.logs).sort().slice(-7);
   const kcals=keys.map(k=>state.logs[k]?.kcal||0);
   const avgKcal=kcals.length?Math.round(kcals.reduce((a,b)=>a+b,0)/kcals.length):0;
-  const daysOnTarget=kcals.filter(k=>k>0&&k<=GOAL_KCAL+100).length;
+  const daysOnTarget=kcals.filter(k=>k>0&&k<=GOAL_KCAL+100).length; const stepsOk=keys.filter(k=>state.habits?.[k]?.steps).length; const breathOk=keys.filter(k=>state.habits?.[k]?.breath).length;
   document.getElementById('week-stats').innerHTML=`<div class="stat"><div class="stat-val ${avgKcal<=GOAL_KCAL?'good':'bad'}">${avgKcal}</div><div class="stat-lbl">середні ккал</div></div><div class="stat"><div class="stat-val good">${daysOnTarget}</div><div class="stat-lbl">днів у нормі</div></div><div class="stat"><div class="stat-val neutral">${keys.length}</div><div class="stat-lbl">днів відмічено</div></div>`;
   const logList=document.getElementById('log-list');
   if(!keys.length){logList.innerHTML='<div style="color:#aaa;font-size:14px;padding:8px">Ще немає даних</div>';return;}

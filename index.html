@@ -125,6 +125,19 @@ canvas{width:100%!important}
     <div class="card-title">Прийоми їжі</div>
     <div id="meal-list"></div>
   </div>
+ <div class="card">
+    <div class="card-title">Звички дня</div>
+    <div class="habit-row">
+      <input type="checkbox" class="meal-check" id="h-steps" onchange="saveHabit('steps',this.checked)">
+      <span class="meal-name">10 000 кроків</span>
+      <span class="meal-kcal">🚶</span>
+    </div>
+    <div class="habit-row" style="border-bottom:none">
+      <input type="checkbox" class="meal-check" id="h-breath" onchange="saveHabit('breath',this.checked)">
+      <span class="meal-name">Дихальна гімнастика</span>
+      <span class="meal-kcal">🫁</span>
+    </div>
+  </div>
   <div class="card">
     <div class="card-title">Нотатка дня</div>
     <textarea id="day-note" placeholder="Як себе почуваєш? Що з'їла зайвого? Настрій?"></textarea>
